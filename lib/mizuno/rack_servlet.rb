@@ -8,11 +8,13 @@
 #         /servlet/http/HttpServlet.html
 #
 module Mizuno
-    include_class javax.servlet.http.HttpServlet
+    java_import javax.servlet.http.HttpServlet
 
     class RackServlet < HttpServlet
-        include_class java.io.FileInputStream
-        include_class org.eclipse.jetty.continuation.ContinuationSupport
+        java_import java.io.FileInputStream
+        java_import org.eclipse.jetty.continuation.ContinuationSupport
+
+        ASCII_8BIT = Encoding.find( "ASCII-8BIT" ) if defined?( Encoding )
 
         #
         # Sets the Rack application that handles requests sent to this
@@ -92,7 +94,8 @@ module Mizuno
 
             # Map Servlet bits to Rack bits.
             env['REQUEST_METHOD'] = request.getMethod
-            env['QUERY_STRING'] = request.getQueryString.to_s
+            qstring = request.getQueryString.to_s #or empty string
+            env['QUERY_STRING'] = qstring
             env['SERVER_NAME'] = request.getServerName
             env['SERVER_PORT'] = request.getServerPort.to_s
             env['rack.version'] = Rack::VERSION
@@ -108,21 +111,28 @@ module Mizuno
             env['SCRIPT_NAME'] = ""
 
             # Rack says URI, but it hands off a URL.
-            env['REQUEST_URI'] = request.getRequestURL.toString
+            req_uri = request.getRequestURL.toString
 
             # Java chops off the query string, but a Rack application will
             # expect it, so we'll add it back if present
-            env['REQUEST_URI'] << "?#{env['QUERY_STRING']}" \
-                if env['QUERY_STRING']
+            req_uri << '?' << qstring unless qstring.empty?
+            env['REQUEST_URI'] = req_uri
 
             # JRuby is like the matrix, only there's no spoon or fork().
             env['rack.multiprocess'] = false
             env['rack.multithread'] = true
             env['rack.run_once'] = false
 
+            # CONTENT_TYPE/LENGTH are handled specifically, not in headers.
+            ctype = request.getContentType
+            env['CONTENT_TYPE'] = ctype if ctype && !ctype.empty?
+            clength = request.getContentLength
+            env['CONTENT_LENGTH'] = clength.to_s if clength != -1
+
             # Populate the HTTP headers.
             request.getHeaderNames.each do |header_name|
                 header = header_name.upcase.tr('-', '_')
+                next if header == 'CONTENT_TYPE' || header == 'CONTENT_LENGTH'
                 env["HTTP_#{header}"] = request.getHeader(header_name)
             end
 
@@ -134,7 +144,9 @@ module Mizuno
                 if env["HTTP_CONTENT_LENGTH"]
 
             # The input stream is a wrapper around the Java InputStream.
-            env['rack.input'] = request.getInputStream.to_io
+            input = request.getInputStream.to_io.binmode
+            input.set_encoding(ASCII_8BIT) if input.respond_to?(:set_encoding)
+            env['rack.input'] = input
 
             # The output stream defaults to stderr.
             env['rack.errors'] ||= $stderr
