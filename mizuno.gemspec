@@ -1,9 +1,9 @@
 Gem::Specification.new do |spec|
-    spec.name = "mizuno"
-    spec.version = "0.4.0"
+    spec.name = "mizuno-hcnguyen"
+    spec.version = "0.4.1"
     spec.required_rubygems_version = Gem::Requirement.new(">= 1.2") \
         if spec.respond_to?(:required_rubygems_version=)
-    spec.authors = [ "Don Werve" ]
+    spec.authors = [ "Don Werve", 'hcnguyen5' ]
     spec.description = 'Jetty-powered running shoes for JRuby/Rack.'
     spec.summary = 'Rack handler for Jetty 7 on JRuby.  Features multithreading, event-driven I/O, and async support.'
     spec.email = 'don@madwombat.com'
@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
         lib/mizuno/http_server.rb
         lib/mizuno/rack_servlet.rb
         lib/mizuno.rb
-        bin/mizuno )
+        bin/mizuno-hcnguyen )
     spec.homepage = 'http://github.com/matadon/mizuno'
     spec.has_rdoc = false
     spec.require_paths = [ "lib" ]
